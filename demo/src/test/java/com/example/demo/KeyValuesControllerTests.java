@@ -97,7 +97,7 @@ public class KeyValuesControllerTests {
     @Order(8)
     void testSaveAndRetrieveComplexValue() throws Exception {
         mockMvc.perform(post("/api/kv")
-                .param("key", "comlex_key")
+                .param("key", "complex_key")
                 .param("value", "{\"user\": \"Emir\", \"role\": \"Senior\"}"))
                 .andDo(print())
                 .andExpect(status().isOk());
