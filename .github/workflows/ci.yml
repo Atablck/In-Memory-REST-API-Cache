@@ -34,4 +34,5 @@ jobs:
 
       # Runs tests with Maven
       - name: Run unit tests
+        working-directory: demo
         run: mvn clean test
