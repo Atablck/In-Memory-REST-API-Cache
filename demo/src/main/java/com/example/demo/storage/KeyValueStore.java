@@ -1,5 +1,15 @@
 package com.example.demo.storage;
 
-public interface KeyValueStore {
+import java.util.Optional;
 
+public interface KeyValueStore {
+    void put(String key, String value);
+
+    Optional<String> get(String key);
+
+    boolean remove(String key);
+
+    int size();
+
+    void clear();
 }
