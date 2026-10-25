@@ -2,7 +2,6 @@ package com.example.demo.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.lenient;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
@@ -162,7 +161,8 @@ public class KeyValueConcurrencyTests {
 
         for(int i = 0; i < threadCount; i++) {
             executor.submit(() -> { 
-                try { readyLatch.countDown();
+                try { 
+                    readyLatch.countDown();
                     startLatch.await();
                     for (int j = 0; j < keysPerThread; j++) { 
                         boolean removed = store.remove("base_key_" + j); 
@@ -187,4 +187,54 @@ public class KeyValueConcurrencyTests {
         int expectedSize = prePopulatedCount - successulRemovals.get();
         assertEquals(expectedSize, store.size(), "Storage size does not match the expected value!");
     }
+
+    @Test
+    @Timeout(value = 5, unit = TimeUnit.SECONDS)
+    void testConcurrencyClear() throws InterruptedException {
+        int prePopulatedCount = 500;
+
+        for(int i = 0; i < prePopulatedCount; i++) {
+            store.put("base_key_" + i, "base_value_" + i);
+        }
+
+        int threadCount = 32;
+        int keysPerThread = 500;
+
+        CountDownLatch readyLatch = new CountDownLatch(threadCount);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch finishLatch = new CountDownLatch(threadCount);
+
+        ConcurrentLinkedQueue<Throwable> exceptions = new ConcurrentLinkedQueue<>();
+
+        for(int i = 0; i < threadCount; i++) {
+            final int threadId = i;
+            executor.submit(() -> {
+                try {
+                    readyLatch.countDown();
+                    startLatch.await();
+                    if (threadId == 0) { 
+                        Thread.sleep(2); 
+                        store.clear(); 
+                    } else { 
+                        for (int j = 0; j < keysPerThread; j++) { 
+                            store.put("writer_" + threadId + "_" + j, "val_" + j); 
+                            store.get("base_key_" + (j % prePopulatedCount)); } 
+                    }
+                } catch(Throwable t) {
+                    exceptions.add(t);
+                } finally {
+                    finishLatch.countDown();
+                }
+            });
+        }
+
+        readyLatch.await();
+        startLatch.countDown();
+        finishLatch.await();
+
+        assertTrue(exceptions.isEmpty(), "Errors occurred in background threads: " + exceptions); 
+        store.clear(); 
+        assertEquals(0, store.size(), "Storage should be completely empty!");
+    }
+
 }
