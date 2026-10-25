@@ -15,19 +15,16 @@ public class ConcurrentHashMapStore implements KeyValueStore {
 
     @Override
     public Optional<String> get(String key) {
-        map.get(key);
         return Optional.ofNullable(map.get(key));
     }
 
     @Override
     public boolean remove(String key) {
-        map.remove(key);
         return map.remove(key) != null;
     }
 
     @Override
     public int size() {
-        map.size();
         return map.size();
     }
 
